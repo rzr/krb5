@@ -4,9 +4,7 @@ from k5test import *
 realm = K5Realm(create_kdb=False)
 
 keyctl = which('keyctl')
-out = realm.run([klist, '-c', 'KEYRING:process:abcd'], expected_code=1)
-test_keyring = (keyctl is not None and
-                'Unknown credential cache type' not in out)
+test_keyring = realm.is_keyring_available()
 if not test_keyring:
     skipped('keyring collection tests', 'keyring support not built')
 

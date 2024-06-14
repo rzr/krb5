@@ -1057,6 +1057,24 @@ class K5Realm(object):
     def run_kadmin(self, args, **keywords):
         return self.run([kadmin, '-c', self.kadmin_ccache] + args, **keywords)
 
+    def is_keyring_available(self):
+        '''
+        Confirm that keyctl is available, keyring caches are built in, and adding keys is not masked by seccomp filters.
+        '''
+        keyctl = which('keyctl')
+        out = self.run([klist, '-c', 'KEYRING:process:abcd'], expected_code=1)
+        if (keyctl is None or
+            'Unknown credential cache type' in out):
+            return False
+        try: subprocess.check_output(['keyctl', 'add', 'user', 'some_key', 'data', '@p'], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            out = str(e.output, 'utf-8')
+            if 'Function not implemented' in out and e.returncode == 1:
+                return False # masked by seccomp
+            fail('Unexpected output from keyctl: '+e.output)
+            raise
+        return True
+    
     def special_env(self, name, has_kdc_conf, krb5_conf=None, kdc_conf=None):
         krb5_conf_path = os.path.join(self.testdir, 'krb5.conf.%s' % name)
         krb5_conf = _cfg_merge(self._krb5_conf, krb5_conf)
