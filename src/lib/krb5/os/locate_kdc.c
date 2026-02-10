@@ -714,7 +714,8 @@ dns_locate_server_srv(krb5_context context, const krb5_data *realm,
         break;
     case locate_service_master_kdc:
         dnsname = "_kerberos-master";
-        break;
+        /* Unavailable in AD, so skip actual DNS query. */
+        return 0;
     case locate_service_kadmin:
         dnsname = "_kerberos-adm";
         break;
